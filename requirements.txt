@@ -1,0 +1,11 @@
+# Cài: pip install -r requirements.txt
+# Sau đó train model: python3 train_and_save.py --data dataset.csv
+
+pandas>=2.0
+numpy>=1.24
+scikit-learn>=1.3
+imbalanced-learn>=0.12
+xgboost>=2.0
+lightgbm>=4.0
+streamlit>=1.28
+altair>=5.0

@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Virtual environment — KHÔNG đưa lên Git
+venv/
+.venv/
+env/
+
+# Model đã train — tạo lại bằng: python3 train_and_save.py
+model.pkl
+*.pkl
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Env secrets
+.env
+.env.*
