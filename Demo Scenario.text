@@ -1,451 +1,397 @@
 ================================================================================
-  KỊCH BẢN DEMO — ML-EduPredict
-  Dự đoán Bỏ học & Kết quả Học tập Sinh viên
+  KỊCH BẢN DEMO — ML-EduPredict  (Phiên bản 3.0)
+  Train trong Jupyter Notebook → model.pkl → Streamlit
 ================================================================================
 
-Phiên bản:     2.0  (cập nhật theo app.py — preset, Dashboard, Lịch sử, JSON)
+Phiên bản:     3.0
+Cập nhật:      Huấn luyện chính trong file .ipynb (không dùng script train riêng)
 Thời lượng:    25 phút (đầy đủ) | 12 phút (rút gọn)
-Đối tượng:     Giảng viên, hội đồng đồ án, phòng đào tạo, reviewer kỹ thuật
-Công cụ:       Terminal + trình duyệt (Streamlit)
-File liên quan: app.py, model.pkl, train_and_save.py, README.md,
-                 prediction_history.json (tự sinh sau dự đoán)
+File liên quan:
+  - Predict students' dropout and academic success.ipynb
+  - model.pkl (xuất từ notebook)
+  - app.py, README.md, dataset.csv
 
 --------------------------------------------------------------------------------
 MỤC LỤC
 --------------------------------------------------------------------------------
-  0.  Chuẩn bị trước khi demo
+  0.  Chuẩn bị — train trong Notebook trước khi demo
   1.  Mục tiêu & thông điệp
-  2.  Timeline (25 phút / 12 phút)
-  3.  Tour giao diện mới (sidebar, 3 trang, dark mode)
-  4.  Luồng demo chuẩn — DÙNG PRESET (khuyến nghị)
-  5.  Kịch bản chi tiết 5 ca
-  6.  Demo Dashboard & Lịch sử (Mức 2–3)
-  7.  So sánh CA 1 vs CA 4 (Minh Anh vs Lan Phương)
-  8.  Bảng tóm tắt & giải thích kết quả
-  9.  Kịch bản lỗi & Q&A
+  2.  Timeline
+  3.  Giới thiệu pipeline (cho hội đồng)
+  4.  Tour giao diện Streamlit
+  5.  Luồng demo — 5 ca preset
+  6.  Kịch bản chi tiết từng ca
+  7.  Dashboard & Lịch sử
+  8.  So sánh CA 1 vs CA 4
+  9.  Lỗi thường gặp & Q&A
  10.  Kết thúc
- Phụ lục A: Checklist 1 trang
- Phụ lục B: Ánh xạ Form ↔ Dataset
- Phụ lục C: Nhập tay từng ô (dự phòng khi preset lỗi)
+ Phụ lục A: Checklist
+ Phụ lục B: Cell notebook cần chạy
+ Phụ lục C: Cell xuất model.pkl (copy vào notebook)
+ Phụ lục D: Ánh xạ Form ↔ Dataset
 
 ================================================================================
-0. CHUẨN BỊ TRƯỚC KHI DEMO
+0. CHUẨN BỊ — TRAIN TRONG NOTEBOOK TRƯỚC KHI DEMO
 ================================================================================
 
-[ ] Python 3.9+ và virtualenv:
-      cd /Users/macos/Documents/ML2026    # đổi đường dẫn máy bạn
+[ ] Kích hoạt môi trường:
+      cd /Users/macos/Documents/ML2026
       source venv/bin/activate
 
-[ ] File model.pkl (~46 MB). Nếu chưa có:
-      python3 train_and_save.py --data dataset.csv --output model.pkl
+[ ] Cài đủ thư viện (nếu mới clone):
+      pip install pandas numpy scikit-learn imbalanced-learn \
+        xgboost lightgbm catboost matplotlib seaborn streamlit altair jupyter
 
-[ ] Chạy thử Streamlit (trước demo 5 phút):
+[ ] Mở notebook:
+      jupyter notebook "Predict students' dropout and academic success.ipynb"
+
+[ ] Chạy train (chọn một trong hai):
+      • Cách A: Kernel → Restart & Run All (lâu, ~5–15 phút)
+      • Cách B: Chạy tuần tự từ đầu đến hết phần XGBoost (cell ~95–97)
+
+[ ] Chạy cell XUẤT model.pkl — xem Phụ lục C (thêm cell cuối nếu chưa có)
+
+[ ] Kiểm tra:
+      ls -lh model.pkl
+      → File tồn tại trong thư mục ML2026
+
+[ ] Chạy Streamlit:
       streamlit run app.py
       → http://localhost:8501
-      → Sidebar: "✅ model.pkl đã load" + Pipeline "Scale+Ensemble"
+      → Sidebar: "✅ model.pkl đã load"
+      → Pipeline: "PCA+KMeans" (đúng với notebook)
 
-[ ] Xóa lịch sử cũ nếu muốn demo “sạch”:
-      Xóa file prediction_history.json HOẶC vào 📜 Lịch sử → 🗑️ Xóa lịch sử
+[ ] (Tuỳ chọn) Xóa lịch sử demo cũ:
+      rm prediction_history.json
+      hoặc 📜 Lịch sử → 🗑️ Xóa lịch sử
 
-[ ] Trình duyệt: zoom 125–150%, ẩn bookmark, tắt thông báo hệ thống
-
-[ ] Mở sẵn tab: (1) Streamlit, (2) README.md hoặc slide (tuỳ chọn)
-
-[ ] In Phụ lục A hoặc mở file này trên điện thoại làm gợi ý
-
-LƯU Ý QUAN TRỌNG — PREDICT ĐÚNG:
-  • App BẮT BUỘC tính 5 cột: pass_rate_1, pass_rate_2, grade_progress,
-    total_approved, avg_grade TRƯỚC khi gọi model.pkl.
-  • Nếu thiếu bước này, mọi ca có thể ra Dropout — KHÔNG phải lỗi dataset.
-  • Preset dropdown + nút Dự đoán đã xử lý đúng pipeline.
-
-Xác suất trong file đã chạy thử với model.pkl hiện tại (±1–2% nếu train lại).
+LƯU Ý:
+  • KHÔNG push model.pkl lên Git (.gitignore đã cấu hình).
+  • Mỗi lần train lại notebook, xác suất demo có thể lệch ±1–3%;
+    thứ hạng lớp (Graduate / Dropout / Enrolled) vẫn phải đúng hướng.
 
 ================================================================================
 1. MỤC TIÊU & THÔNG ĐIỆP
 ================================================================================
 
-Mục tiêu demo:
-  (1) Bài toán thực tế: cảnh báo sớm nguy cơ bỏ học từ 2 học kỳ đầu.
-  (2) Pipeline ML: dữ liệu → train → model.pkl → web Streamlit.
-  (3) Phân biệt 3 lớp: Dropout / Enrolled / Graduate + xác suất minh bạch.
+Mục tiêu:
+  (1) Bài toán thực tế — cảnh báo sớm nguy cơ bỏ học.
+  (2) Pipeline ML trong notebook: EDA → Chi-square → PCA → K-Means → SMOTE → 7 models.
+  (3) Triển khai web: load model.pkl, dự đoán + dashboard trong vài giây.
 
-Thông điệp 3 câu (nhớ thuộc):
-  • "4.424 hồ sơ, 41 đặc trư (36 gốc + 5 engineered từ điểm & tín chỉ)."
-  • "Production: Voting Ensemble — XGBoost + LightGBM + Random Forest (soft voting)."
-  • "Web: nhập hồ sơ → kết quả + lý do + dashboard + lịch sử lưu qua F5."
+Thông điệp 3 câu:
+  • "4.424 hồ sơ sinh viên; notebook lọc đặc trư, nén PCA, gom cụm K-Means."
+  • "So sánh 7 thuật toán; XGBoost thường dẫn đầu — export ra model.pkl để chạy web."
+  • "Streamlit nhập hồ sơ hoặc chọn 5 ca demo, trả nhãn + xác suất + gợi ý can thiệp."
 
 ================================================================================
 2. TIMELINE
 ================================================================================
 
---- PHIÊN BẢN ĐẦY ĐỦ (~25 phút) ---
+--- ĐẦY ĐỦ (~25 phút) ---
 
-  0–2     Mở đầu + mở app
-  2–4     Tour UI: sidebar, 3 trang, dark mode, step indicator
-  4–7     CA 1 — Minh Anh (Graduate) + giải thích lý do + heatmap HK
-  7–10    CA 2 — Văn Bình (Dropout sớm)
-  10–13   CA 3 — Thu Hà (Dropout thất bại học thuật)
-  13–16   CA 4 — Lan Phương (Enrolled)
-  16–19   CA 5 — Hoàng Nam (cảnh báo sớm) + gợi ý can thiệp
-  19–22   📊 Dashboard + 📜 Lịch sử (so sánh A vs B, timeline thẻ)
-  22–25   Q&A + kết thúc (để màn hình CA 1 Graduate)
+  0–2     Mở đầu + giới thiệu pipeline notebook
+  2–4     Mở app Streamlit, tour sidebar / 3 trang
+  4–7     CA 1 Minh Anh (Graduate)
+  7–10    CA 2 Văn Bình (Dropout sớm)
+  10–13   CA 3 Thu Hà (thất bại học thuật)
+  13–16   CA 4 Lan Phương (Enrolled)
+  16–19   CA 5 Hoàng Nam (cảnh báo sớm)
+  19–22   Dashboard + Lịch sử + so sánh A vs B
+  22–25   Q&A + kết (để màn hình Graduate)
 
---- PHIÊN BẢN RÚT GỌN (~12 phút) ---
+--- RÚT GỌN (~12 phút) ---
 
-  0–1     Mở đầu
-  1–2     Tour sidebar + preset dropdown
-  2–5     CA 1 Graduate (Minh Anh)
-  5–8     CA 2 hoặc CA 3 Dropout
-  8–10    CA 4 Enrolled (Lan Phương)
-  10–12   Lịch sử: so sánh CA 1 vs CA 4 + kết thúc
+  0–1     Mở đầu + "train trong ipynb, export pkl"
+  1–2     Tour app + preset dropdown
+  2–5     CA 1 Graduate
+  5–8     CA 2 hoặc 3 Dropout
+  8–10    CA 4 Enrolled
+  10–12   Lịch sử: so sánh CA1 vs CA4 + kết
 
 ================================================================================
-3. TOUR GIAO DIỆN MỚI (2–3 phút) — CHỈ CHỈ MÀN HÌNH
+3. GIỚI THIỆU PIPELINE (2 phút) — SLIDE HOẶC NÓI MIỆNG
 ================================================================================
 
 Lời dẫn:
-"Đây là ML-EduPredict phiên bản web hoàn chỉnh. Sidebar bên trái có ba mục:
-  🔮 Dự đoán — nhập hồ sơ và chạy model.pkl;
-  📊 Dashboard — tổng quan các lần dự đoán trong phiên;
-  📜 Lịch sử — timeline, so sánh hai sinh viên, xuất CSV.
+"Đồ án xử lý end-to-end trong Jupyter Notebook:
 
-Toggle Dark mode đổi theme. Footer ghi ML-EduPredict · ML2026 · 4.424 mẫu.
+  Dữ liệu thô (dataset.csv)
+    → EDA & làm sạch
+    → Chi-square: bỏ 4 biến không liên quan Target
+    → Chuẩn hóa StandardScaler
+    → PCA 10 chiều + K-Means 3 cụm → 11 đặc trư
+    → SMOTE cân bằng lớp trên tập train
+    → Huấn luyện 7 classifier: LR, Naive Bayes, Decision Tree,
+       Random Forest, XGBoost, LightGBM, CatBoost
 
-Trang Dự đoán có dropdown 'Chọn ca demo nhanh' — 5 profile sẵn từ kịch bản này,
-không cần gõ từng ô. Form vẫn một khối, có thanh 4 bước Hành chính → Cá nhân
-→ Học tập → Kinh tế — chỉ là hướng dẫn trực quan, không chia tab (tránh lỗi submit).
+Mô hình deploy (thường XGBoost) được lưu vào model.pkl.
+Ứng dụng Streamlit chỉ load file này — không train lại trên web."
 
-Mỗi trường có icon ? — tooltip giải thích. Phần 'Chỉ số trực tiếp' tính tỷ lệ
-qua môn và điểm TB từ form — không phải ML, giúp người dùng hiểu trước khi bấm Dự đoán."
-
-[Chỉ tay lần lượt]:
-  • Hero xanh tím
-  • Dropdown preset + nút Đặt lại mặc định
-  • Step indicator 4 bước
-  • Sidebar: model.pkl + Scale+Ensemble
+[Hành động: có thể mở nhanh file .html export của notebook nếu không muốn scroll ipynb]
 
 ================================================================================
-4. LUỒNG DEMO CHUẨN — DÙNG PRESET (khuyến nghị)
+4. TOUR GIAO DIỆN STREAMLIT (2 phút)
 ================================================================================
 
-Lặp cho MỖI ca (60–90 giây / ca):
+Sidebar:
+  • Dark mode toggle
+  • 🔮 Dự đoán | 📊 Dashboard | 📜 Lịch sử
+  • Trạng thái model.pkl + Pipeline PCA+KMeans
 
-  Bước 1 — Chọn preset trong "📌 Chọn ca demo nhanh"
-  Bước 2 — Kiểm tra tên sinh viên (ô 👤 Tên sinh viên) đã đổi
-  Bước 3 — (Tuỳ chọn) Chỉ "Chỉ số trực tiếp" — tỷ lệ HK1/HK2
-  Bước 4 — Cuộn form nếu cần → nhấn "🔮 Dự đoán kết quả"
-  Bước 5 — Đọc khung kết quả (đỏ / vàng / xanh)
-  Bước 6 — Đọc "🔎 Vì sao mô hình dự đoán như vậy?" (2–3 bullet)
-  Bước 7 — Chỉ heatmap HK1 vs HK2 + gauge Dropout %
-  Bước 8 — Chỉ biểu đồ cột + donut xác suất
-  Bước 9 — (CA 1) balloons; (Dropout cao) toast cảnh báo
-  Bước 10 — 1 câu nghiệp vụ can thiệp
+Trang Dự đoán:
+  • Dropdown "Chọn ca demo nhanh" — 5 profile
+  • Chỉ số trực tiếp (tỷ lệ qua HK, điểm TB)
+  • Thanh 4 bước (Hành chính → Cá nhân → Học tập → Kinh tế)
+  • Form một khối → nút "🔮 Dự đoán kết quả"
 
-Sau 2–3 ca đầu, nhắc:
-  "Mỗi lần dự đoán được lưu vào prediction_history.json — F5 không mất."
+Sau dự đoán:
+  • Khung màu kết quả + "Vì sao mô hình dự đoán như vậy?"
+  • Heatmap HK1/HK2, gauge Dropout, biểu đồ xác suất
+  • Nút "Tải báo cáo HTML"
 
 ================================================================================
-5. KỊCH BẢN CHI TIẾT — 5 CA DEMO
+5. LUỒNG DEMO — 5 CA (DÙNG PRESET)
 ================================================================================
 
-Bảng kết quả tham chiếu (model.pkl hiện tại):
+Cho MỖI ca (~60–90 giây):
 
-  | Preset dropdown              | Tên        | Dự đoán  | Drop% | Enr%  | Grad% |
-  |------------------------------|------------|----------|-------|-------|-------|
-  | ⭐ Minh Anh (Tốt nghiệp)     | Minh Anh   | Graduate |  6.8  |  1.6  | 91.6  |
-  | ⚠️ Văn Bình (Bỏ học sớm)      | Văn Bình   | Dropout  | 84.7  |  7.3  |  7.9  |
-  | 🔴 Thu Hà (Thất bại HT)       | Thu Hà     | Dropout  | 99.5  |  0.4  |  0.1  |
-  | 📚 Lan Phương (Đang học)      | Lan Phương | Enrolled | 28.4  | 71.2  |  0.4  |
-  | 🚨 Hoàng Nam (Cảnh báo sớm)   | Hoàng Nam  | Dropout  | 97.4  |  2.5  |  0.1  |
+  1. Chọn preset trong dropdown
+  2. Kiểm tra tên sinh viên đã đổi
+  3. Nhấn "🔮 Dự đoán kết quả"
+  4. Đọc nhãn + % cao nhất
+  5. Đọc 2–3 dòng "Vì sao..."
+  6. Chỉ heatmap / gauge (nếu còn thời gian)
+  7. Một câu can thiệp nghiệp vụ
+
+Nhắc sau ca 2–3:
+  "Kết quả được lưu vào prediction_history.json — sang tab Lịch sử xem lại."
+
+Bảng kỳ vọng (sau export model.pkl từ notebook XGBoost + pipeline PCA;
+  số % có thể khác nhẹ nếu bạn train lại):
+
+  | Preset                         | Tên        | Nhãn chính | Ghi chú              |
+  |--------------------------------|------------|------------|----------------------|
+  | ⭐ Minh Anh (Tốt nghiệp)       | Minh Anh   | Graduate   | Qua 6/6, điểm cao    |
+  | ⚠️ Văn Bình (Bỏ học sớm)        | Văn Bình   | Dropout    | 0 tín chỉ 2 kỳ       |
+  | 🔴 Thu Hà (Thất bại HT)         | Thu Hà     | Dropout    | ĐK 6, qua 0          |
+  | 📚 Lan Phương (Đang học)        | Lan Phương | Enrolled   | Qua ít, điểm ~11–12  |
+  | 🚨 Hoàng Nam (Cảnh báo sớm)     | Hoàng Nam  | Dropout    | Nợ HP + điểm thấp    |
+
+================================================================================
+6. KỊCH BẢN CHI TIẾT TỪNG CA
+================================================================================
 
 ------------------------------------------------------------------------------
-CA 1 — MINH ANH → GRADUATE (~3 phút)
+CA 1 — MINH ANH → GRADUATE
 ------------------------------------------------------------------------------
 Preset: ⭐ Minh Anh (Tốt nghiệp)
 
 Bối cảnh:
-  "19 tuổi, hai kỳ đăng ký 6 môn, qua hết, điểm TB ~14 và ~13.7 — profile tốt nghiệp."
+  "Sinh viên 19 tuổi, hai kỳ đăng ký 6 môn và qua hết, điểm TB trên 13."
 
-Sau Dự đoán — nói:
-  • Graduate ~92%, Dropout chỉ ~7%.
-  • Khối lý do: tỷ lệ qua môn cao, điểm tốt.
-  • Heatmap HK1/HK2 xanh — hai kỳ đều mạnh.
-  • Balloons + thông báo tốt nghiệp.
+Lời dẫn sau Dự đoán:
+  "Mô hình XGBoost (train trong notebook trên không gian PCA+K-Means)
+   dự đoán Graduate — pattern học tập ổn định. Đây là ca positive mở demo."
 
-Nghiệp vụ: duy trì mentoring / học bổng khuyến khích.
+Hành động: balloons nếu có; nhấn Graduate % cao, Dropout % thấp.
 
 ------------------------------------------------------------------------------
-CA 2 — VĂN BÌNH → DROPOUT (~2,5 phút)
+CA 2 — VĂN BÌNH → DROPOUT (bỏ học sớm)
 ------------------------------------------------------------------------------
 Preset: ⚠️ Văn Bình (Bỏ học sớm)
 
 Bối cảnh:
-  "Nhập học nhưng HK1 và HK2: đăng ký 0, qua 0 — bỏ học sớm, không theo chương trình."
+  "Không đăng ký, không qua môn cả hai kỳ — bỏ học sớm."
 
-Sau Dự đoán:
-  • Dropout ~85%.
-  • Lý do: không đăng ký môn cả hai kỳ.
-  • Khung đỏ + toast nếu >60%.
-
-Nghiệp vụ: liên hệ phụ huynh, cố vấn — can thiệp khẩn.
+Lời dẫn:
+  "Khi enrolled = 0 và approved = 0, mô hình gần như chắc Dropout.
+   Can thiệp: liên hệ PH, cố vấn."
 
 ------------------------------------------------------------------------------
-CA 3 — THU HÀ → DROPOUT (~2,5 phút)
+CA 3 — THU HÀ → DROPOUT (thất bại học thuật)
 ------------------------------------------------------------------------------
 Preset: 🔴 Thu Hà (Thất bại học thuật)
 
-Bối cảnh:
-  "Đăng ký 6 môn/kỳ nhưng qua 0, điểm 0 — vẫn trên hệ thống nhưng thất bại học thuật."
-
-So sánh với CA 2 (nên nói):
-  "CA 2 không học gì; CA 3 có đăng ký nhưng thất bại — Dropout ~99%, ưu tiên can thiệp CA 3."
+So với CA 2:
+  "Vẫn trên hệ thống (đăng ký 6 môn) nhưng qua 0 — thất bại học thuật,
+   thường nguy cơ cao hơn CA 2."
 
 ------------------------------------------------------------------------------
-CA 4 — LAN PHƯƠNG → ENROLLED (~3 phút)
+CA 4 — LAN PHƯƠNG → ENROLLED
 ------------------------------------------------------------------------------
 Preset: 📚 Lan Phương (Đang học)
 
-Bối cảnh:
-  "Nữ 18 tuổi, qua 1/6 HK1 và 2/6 HK2, điểm ~11–12 — đang học, chưa đủ tốt nghiệp."
+Lời dẫn:
+  "Enrolled không có nghĩa an toàn — vẫn xem % Dropout phụ.
+   Cần tutoring, cố vấn học tập."
 
-Sau Dự đoán:
-  • Enrolled ~71%, nhưng Dropout ~28% — không an toàn.
-  • Gợi ý can thiệp: tutoring, cố vấn học tập.
-
-So sánh CA 1 (chuẩn bị cho mục 7):
-  "Cùng đăng ký 6 môn; Minh Anh qua 6/6, Lan Phương qua 1+2 — mô hình phân tách rõ."
+Chuẩn bị mục 8: so sánh với Minh Anh.
 
 ------------------------------------------------------------------------------
-CA 5 — HOÀNG NAM → DROPOUT (~3 phút)
+CA 5 — HOÀNG NAM → DROPOUT (at-risk)
 ------------------------------------------------------------------------------
 Preset: 🚨 Hoàng Nam (Cảnh báo sớm)
 
-Bối cảnh:
-  "22 tuổi, nợ học phí, chưa đóng đủ, điểm <10, qua 3/6 rồi 2/6 — at-risk tổng hợp."
+Nhấn mạnh khi nói:
+  • Đang nợ học phí (Debtor = Có)
+  • Chưa đóng đủ học phí
+  • Điểm < 10, qua môn thấp
 
-Sau Dự đoán:
-  • Dropout ~97%.
-  • Lý do nhấn: nợ HP + điểm thấp + tỷ lệ qua môn thấp.
-  • Gợi ý: trả góp HP, lớp củng cố.
-
-Demo tương tác (nếu còn thời gian):
-  • Sửa tay: Học phí đầy đủ → Có, Nợ → Không (giữ điểm) → Dự đoán lại → xem Drop% giảm.
+Demo tương tác (nếu còn giờ):
+  Sửa Học phí đầy đủ → Có, Nợ → Không → Dự đoán lại → Dropout % giảm.
 
 ================================================================================
-6. DEMO DASHBOARD & LỊCH SỬ (sau ≥3 lần dự đoán)
+7. DASHBOARD & LỊCH SỬ
 ================================================================================
 
---- 📊 Dashboard (sidebar) ---
+📊 Dashboard (sau ≥ 3 lần dự đoán):
+  • Tổng số lần dự đoán, % Dropout / Enrolled / Graduate
+  • Biểu đồ phân bố
+  • Top 3 sinh viên nguy cơ Dropout cao nhất
 
-Lời dẫn:
-"Sau vài lần dự đoán, Dashboard tổng hợp phiên demo: tổng số lần, % từng lớp,
-biểu đồ phân bố, và Top 3 sinh viên nguy cơ Dropout cao nhất — hữu ích cho
-phòng CTSV xếp hàng đợi can thiệp."
-
-[Chỉ]: metric 4 ô, bar chart phân bố, bar Dropout% theo tên, top 3.
-
---- 📜 Lịch sử ---
-
-Lời dẫn:
-"Lịch sử lưu trong prediction_history.json — refresh trang vẫn còn.
-
-  • Timeline thẻ: viền màu Dropout đỏ, Enrolled vàng, Graduate xanh.
-  • Bảng đầy đủ + xuất CSV.
-  • So sánh 2 sinh viên: chọn hai dòng → bar chart xác suất cạnh nhau."
+📜 Lịch sử:
+  • Timeline thẻ (viền màu theo lớp)
+  • Bảng + xuất CSV
+  • So sánh 2 sinh viên — bar chart xác suất
 
 Empty state:
-  Nếu chưa có dữ liệu → card minh họa + nút 'Thử ca demo Minh Anh' quay về Dự đoán.
-
---- Tải báo cáo HTML ---
-
-Sau mỗi Dự đoán, nút "📄 Tải báo cáo HTML" — mở bằng trình duyệt, in PDF (Ctrl+P).
+  Nút "Thử ca demo Minh Anh" → quay trang Dự đoán.
 
 ================================================================================
-7. SO SÁNH CA 1 vs CA 4 (Minh Anh vs Lan Phương) — WOW DEMO
+8. SO SÁNH CA 1 vs CA 4 (Minh Anh vs Lan Phương)
 ================================================================================
 
-Điều kiện: đã dự đoán cả Minh Anh và Lan Phương (preset).
+Điều kiện: đã dự đoán cả hai.
 
 Bước:
-  1. Vào 📜 Lịch sử
-  2. Mục "⚖️ So sánh 2 sinh viên (A vs B)"
-  3. Chọn hai dòng: "Minh Anh (...)" và "Lan Phương (...)"
-  4. Chỉ bar chart: Graduate Minh Anh cao, Lan Phương Enrolled cao, Dropout Lan ~28%
+  1. 📜 Lịch sử
+  2. "So sánh 2 sinh viên" — chọn Minh Anh và Lan Phương
+  3. Chỉ biểu đồ cạnh nhau
 
 Lời dẫn:
-"Hai sinh viên cùng đăng ký 6 môn mỗi kỳ — khác biệt ở môn qua và điểm.
-Mô hình không chỉ cho nhãn mà còn xác suất từng lớp — hỗ trợ quyết định,
-không thay thế cố vấn viên."
+  "Cùng framework model.pkl từ notebook; khác input học tập → khác phân phối
+   xác suất. Minh Anh Graduate cao; Lan Phương Enrolled nhưng vẫn có risk Dropout."
 
 ================================================================================
-8. BẢNG TÓM TẮT & GIẢI THÍCH KẾT QUẢ
-================================================================================
-
-Giải thích khối "Vì sao mô hình dự đoán như vậy?":
-  • Quy tắc đọc từ form (tỷ lệ qua môn, nợ HP, điểm TB, xu hướng HK2 vs HK1)
-  • Kết hợp xác suất từ Voting Ensemble (model.pkl)
-  • Minh bạch cho hội đồng — không phải hộp đen hoàn toàn
-
-Giải thích gauge & heatmap:
-  • Gauge = % Dropout từ model (nguy cơ ML)
-  • Heatmap HK = chỉ số học tập trực quan (xanh / vàng / đỏ)
-
-Expander "Xem dữ liệu đầu vào":
-  • Vector 41 chiều sau engineering — audit được
-
-================================================================================
-9. KỊCH BẢN LỖI & Q&A
+9. LỖI THƯỜNG GẶP & Q&A
 ================================================================================
 
 --- Lỗi ---
 
-❌ Sidebar "Thiếu model.pkl"
-   → python3 train_and_save.py --data dataset.csv
-   → Hoặc copy backup model.pkl từ USB
+❌ Thiếu model.pkl
+   → Chạy notebook + Phụ lục C (cell export)
+
+Sidebar không ghi PCA+KMeans
+   → model.pkl cũ hoặc export thiếu pca/kmeans — export lại từ notebook
 
 Mọi ca đều Dropout
-   → Kiểm tra code có 5 dòng feature engineering trước scaler (README)
-   → Dùng preset + Dự đoán lại
+   → model.pkl không khớp pipeline; train & export lại đủ object
 
-Streamlit không mở browser
-   → Mở tay http://localhost:8501
+--- Q&A ---
 
-Xác suất lệch vài % so bảng trên
-   → Train lại model; thứ hạng lớp vẫn đúng
+Q: Train ở đâu?
+A: Trong file .ipynb — EDA đến 7 models; cell cuối lưu model.pkl.
 
---- Q&A gợi ý ---
+Q: Tại sao không dùng script .py?
+A: Toàn bộ nghiên cứu và train trong notebook; app chỉ inference.
 
-Q: Dữ liệu từ đâu?
-A: Dataset công khai sinh viên đại học, 4.424 mẫu — README mục Bộ dữ liệu.
+Q: XGBoost accuracy bao nhiêu?
+A: Xem output cell đánh giá XGBoost trong notebook (confusion matrix + %).
 
-Q: Độ chính xác?
-A: In ra khi chạy train_and_save.py (Voting Ensemble trên test 20%).
-   Nhấn precision/recall lớp Enrolled (thiểu số).
+Q: 7 model khác notebook để làm gì?
+A: So sánh trong đồ án; deploy thường chọn XGBoost (hoặc model đứng đầu bảng).
 
-Q: PCA + KMeans trên sidebar?
-A: Notebook nghiên cứu. Production app dùng Scale + Ensemble trên 41 feature.
-
-Q: Deploy production?
-A: Hiện local; có thể Streamlit Cloud / Docker + API sau.
-
-Q: SV mới chưa có HK2?
-A: Nhập 0 hoặc ước lượng — độ tin giảm; ghi chú trên UI (hướng phát triển).
-
-Q: Lịch sử có trên server không?
-A: Chỉ file JSON local máy demo — không backend.
+Q: model.pkl có push Git không?
+A: Không — file lớn; người clone tự chạy notebook.
 
 ================================================================================
-10. KẾT THÚC — LỜI DẪN MẪU
+10. KẾT THÚC
 ================================================================================
 
-"ML-EduPredict hoàn chỉnh từ dữ liệu đến web: model.pkl, giải thích dự đoán,
-dashboard, lịch sử và báo cáo HTML. Năm ca demo cho thấy từ sinh viên xuất sắc
-đến nhóm cần can thiệp khẩn.
+"Tóm lại: notebook xử lý dữ liệu và train; model.pkl mang sang Streamlit;
+demo 5 profile từ xuất sắc đến cần can thiệp khẩn.
 
-Hướng phát triển: API tích hợp hệ thống quản lý sinh viên, dropdown tên ngành,
-và retrain định kỳ.
+Hướng phát triển: API quản lý sinh viên, retrain định kỳ, dashboard theo khoa.
 
 Em cảm ơn thầy cô. Em sẵn sàng trả lời câu hỏi."
-
-[Để màn hình CA 1 Graduate hoặc Dashboard top nguy cơ]
 
 ================================================================================
 PHỤ LỤC A — CHECKLIST 1 TRANG
 ================================================================================
 
-Trước:
-  [ ] venv   [ ] model.pkl   [ ] streamlit run app.py   [ ] localhost:8501
-  [ ] (tuỳ chọn) xóa prediction_history.json
-
-Thứ tự preset:
-  [ ] 1 Minh Anh — Graduate
-  [ ] 2 Văn Bình — Dropout sớm
-  [ ] 3 Thu Hà — Dropout 99%
-  [ ] 4 Lan Phương — Enrolled
-  [ ] 5 Hoàng Nam — at-risk
-
-Sau 3 ca:
-  [ ] Dashboard   [ ] Lịch sử so sánh CA1 vs CA4
-
-Nhớ nói:
-  • 4424 mẫu · 41 feature · model.pkl · Voting Ensemble
-  • Xác suất = hỗ trợ quyết định, không thay con người
+[ ] venv activate
+[ ] notebook chạy xong (đến XGBoost)
+[ ] cell export → model.pkl
+[ ] streamlit run app.py → PCA+KMeans
+[ ] 5 preset demo
+[ ] Dashboard + Lịch sử so sánh
 
 ================================================================================
-PHỤ LỤC B — ÁNH XẠ FORM ↔ DATASET
+PHỤ LỤC B — CELL NOTEBOOK CẦN CHẠY (tham chiếu)
 ================================================================================
 
-  UI (tiếng Việt)                 | Cột kỹ thuật
-  --------------------------------|----------------------------------
-  Tình trạng hôn nhân             | Marital_status
-  Phương thức / Thứ tự đăng ký    | Application_mode / Application_order
-  Mã ngành học                    | Course
-  Ca học                          | Daytime/evening_attendance (có \t)
-  Trình độ & điểm đầu vào        | Previous_qualification / _(grade)
-  Quốc tịch                       | Nacionality
-  Trình độ / Nghề mẹ, cha         | Mother's_... / Father's_...
-  Điểm tuyển sinh                 | Admission_grade
-  Di dân / Đặc biệt / Nợ / HP    | Displaced / Educational_special_needs /
-                                  | Debtor / Tuition_fees_up_to_date
-  Giới tính / HB / Tuổi / QT      | Gender / Scholarship_holder /
-                                  | Age_at_enrollment / International
-  HK1, HK2 (miễn, ĐK, qua, điểm) | Curricular_units_1st/2nd_sem_(...)
-  KT vĩ mô                        | Unemployment_rate / Inflation_rate / GDP
-
-  Tự tính (app + train): pass_rate_1, pass_rate_2, grade_progress,
-                         total_approved, avg_grade
+| Giai đoạn | Nội dung (tìm trong ipynb) |
+|-----------|----------------------------|
+| Đầu | Import, đọc dataset.csv (;) |
+| EDA | Phân bố Target, biểu đồ |
+| Encode | LabelEncoder → Target số |
+| Outlier | IQR 4 cột điểm |
+| Chi-square | Loại 4 cột (cell i_cols) |
+| PCA | n_components=10 |
+| K-Means | n_clusters=3 → X_final 11 chiều |
+| Split + SMOTE | X_train_res, y_train_res |
+| Train | 7 models — chú ý xgb_model |
+| Export | Phụ lục C |
 
 ================================================================================
-PHỤ LỤC C — NHẬP TAY TỪNG Ô (chỉ khi preset không dùng được)
+PHỤ LỤC C — CELL XUẤT model.pkl (thêm cuối notebook)
 ================================================================================
 
-Quy ước: [C1][C2][C3] = 3 cột "Thông tin hành chính"
-         [Đặc điểm] = section 👤
-         [HK1][HK2] = học kỳ
-         [KT] = kinh tế vĩ mô
-Radio: chọn NHÃN trên UI (Nam/Nữ, Có/Không).
+Chạy SAU khi xgb_model (hoặc model chọn) đã .fit(X_train_res, y_train_res):
 
---- CA 1 MINH ANH ---
-[C1] Độc thân(1) | ĐK:15 | TT:1 | Ngành:9254
-[C2] Ban ngày | TD:1 | Điểm ĐV:160 | QT:1
-[C3] Mẹ:1 Cha:3 | Nghề 3/3
-[Đặc điểm] Di dân:Có | ĐB:Không | Nợ:Không | HP đủ:Không | Nam | HB:Không | 19 | QT:Không | TS:142.5
-[HK1] 0,6,6,6,14.0,0  [HK2] 0,6,6,6,13.7,0
-[KT] 13.9, -0.3, 0.79
+--- bắt đầu copy ---
 
---- CA 2 VĂN BÌNH ---
-[C1] Độc thân | 17 | 5 | 171
-[C2] Ban ngày | 1 | 122 | 1
-[C3] 19, 12, 5, 9
-[Đặc điểm] Di dân:Có | Nợ:Không | HP:Có | Nam | 20 | TS:127.3
-[HK1][HK2] tất cả 0
-[KT] 10.8, 1.4, 1.74
+import pickle
 
---- CA 3 THU HÀ ---
-[C1] Độc thân | 1 | 5 | 9070
-[C2] Ban ngày | 1 | 122 | 1
-[C3] Mẹ:29 Cha:29 | Nghề 9/9        ← preset app dùng 29, không phải 37
-[Đặc điểm] Di dân:Có | HP:Không | Nam | 19 | TS:124.8
-[HK1] 0,6,0,0,0,0  [HK2] 0,6,0,0,0,0
-[KT] 10.8, 1.4, 1.74
+pipeline = {
+    "model": xgb_model,
+    "label_encoder": le,
+    "feature_cols": list(X_after_chi2.columns),
+    "scaler": scaler,
+    "pca": pca,
+    "kmeans": kmeans,
+}
 
---- CA 4 LAN PHƯƠNG ---
-[C1] Độc thân | 18 | 1 | 9238
-[C2] Ban ngày | 1 | 137 | 1
-[C3] Mẹ:19 Cha:29 | Nghề 5/8        ← preset app: cha 29
-[Đặc điểm] Di dân:Có | HP:Có | Nữ | 18 | TS:137.4
-[HK1] 0,6,10,1,12,0  [HK2] 0,6,14,2,11,0
-[KT] 10.8, 1.4, 1.74
+with open("model.pkl", "wb") as f:
+    pickle.dump(pipeline, f)
 
---- CA 5 HOÀNG NAM ---
-[C1] Độc thân | 1 | 1 | 9500
-[C2] Ban ngày | 1 | 120 | 1
-[C3] 19, 29, 5, 8
-[Đặc điểm] Di dân:Không | Nợ:Có | HP:Không | Nam | 22 | TS:115
-[HK1] 0,6,8,3,9.5,1  [HK2] 0,6,8,2,8.0,2
-[KT] 15.5, 2.8, -1.7
+print("✅ Đã lưu model.pkl")
+print("   feature_cols:", len(pipeline["feature_cols"]), "cột")
+print("   Chạy web: streamlit run app.py")
+
+--- kết thúc copy ---
+
+Kiểm tra nhanh:
+
+import pickle
+p = pickle.load(open("model.pkl","rb"))
+print(p.keys())
+# dict_keys(['model', 'label_encoder', 'feature_cols', 'scaler', 'pca', 'kmeans'])
 
 ================================================================================
-HẾT KỊCH BẢN DEMO v2.0
+PHỤ LỤC D — ÁNH XẠ FORM ↔ DATASET
+================================================================================
+
+  UI Streamlit              | Cột dataset / model
+  --------------------------|----------------------------------
+  (các trường form)         | Sau Chi-square: ~32 cột trong feature_cols
+  Tên sinh viên             | Chỉ hiển thị — không vào model
+  ...                       | Xem README.md — bảng đầy đủ
+
+  Pipeline predict (app):
+    form → DataFrame → lấy df[feature_cols] → scaler → pca → kmeans → model
+
+================================================================================
+HẾT KỊCH BẢN DEMO v3.0
 ================================================================================
