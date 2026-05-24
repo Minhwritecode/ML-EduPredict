@@ -29,6 +29,7 @@ model.pkl
 
 # Streamlit
 .streamlit/secrets.toml
+prediction_history.json
 
 # Env secrets
 .env
