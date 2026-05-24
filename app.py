@@ -922,22 +922,6 @@ if submitted:
 
         df = pd.DataFrame([raw])
 
-        df["pass_rate_1"] = df["Curricular_units_1st_sem_(approved)"] / (
-            df["Curricular_units_1st_sem_(enrolled)"] + 1
-        )
-        df["pass_rate_2"] = df["Curricular_units_2nd_sem_(approved)"] / (
-            df["Curricular_units_2nd_sem_(enrolled)"] + 1
-        )
-        df["grade_progress"] = (
-            df["Curricular_units_2nd_sem_(grade)"] - df["Curricular_units_1st_sem_(grade)"]
-        )
-        df["total_approved"] = (
-            df["Curricular_units_1st_sem_(approved)"] + df["Curricular_units_2nd_sem_(approved)"]
-        )
-        df["avg_grade"] = (
-            df["Curricular_units_1st_sem_(grade)"] + df["Curricular_units_2nd_sem_(grade)"]
-        ) / 2
-
         for col in feature_cols:
             if col not in df.columns:
                 df[col] = 0
