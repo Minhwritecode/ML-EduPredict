@@ -683,7 +683,11 @@ with st.sidebar:
             st.metric("Dự đoán phiên này", len(st.session_state.history))
     else:
         st.error("❌ Thiếu model.pkl")
-        st.code("python3 train_and_save.py", language="bash")
+        st.code(
+            'jupyter notebook "Predict students\' dropout and academic success.ipynb"\n'
+            "# → chạy cell xuất model.pkl (README Phụ lục C)",
+            language="bash",
+        )
 
 inject_theme_css(st.session_state.theme)
 
@@ -872,7 +876,10 @@ with st.form("predict_form"):
 # ══════════════════════════════════════════════════════════════════════════════
 if submitted:
     if not MODEL_LOADED:
-        st.error("Model chưa load. Chạy: python3 train_and_save.py --data dataset.csv")
+        st.error(
+            "Model chưa load. Chạy notebook → cell xuất model.pkl "
+            "(xem README.md / Demo Scenario.text Phụ lục C)."
+        )
     else:
         raw = {
             "Marital_status": marital_status,
